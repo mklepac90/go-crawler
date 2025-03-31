@@ -18,15 +18,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	url := args[0]
+	rawBaseURL := args[0]
 	
-	fmt.Printf("starting crawl of %v\n", url)
+	const maxConcurrency = 3
+	cfg, err := configure(rawBaseURL, maxConcurrency)
+	if err != nil {
+		fmt.Printf("Error - configure: %v", err)
+		return
+	}
 
-	pages := make(map[string]int)
+	fmt.Printf("starting crawl of: %s...\n", rawBaseURL)
 
-	crawlPage(url, url, pages)
+	cfg.wg.Add(1)
+	go cfg.crawlPage(rawBaseURL)
+	cfg.wg.Wait()
 
-	for normalizedURL, count := range pages {
-		fmt.Printf("%d - %s\n", count, normalizedURL)
+	for normalizedURL, count := range cfg.pages {
+		fmt.Printf("%d - %s\n", count, normalizedURL)	
 	}
 }
